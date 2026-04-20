@@ -1,0 +1,16 @@
+const express = require("express");
+const connectDB = require("./config/db");
+
+const app = express();
+
+app.use(express.json());
+
+// DB
+connectDB();
+
+// routes
+app.use("/api/auth", require("./routes/auth.routes"));
+app.use("/api/teachers", require("./routes/teacher.routes"));
+app.use("/api/students", require("./routes/student.routes"));
+
+module.exports = app;
