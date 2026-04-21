@@ -1,12 +1,12 @@
 const mongoose = require("mongoose");
 
 const teacherSchema = new mongoose.Schema({
-  firstName: String,
-  lastName: String,
-  idNumber: { type: String, unique: true },
-  class: String,
-  password: String, // futer case
-  role: { type: String, default: "teacher" }
+  firstName:  { type: String, required: true },
+  lastName:   { type: String, required: true },
+  idNumber:   { type: String, required: true, unique: true },
+  class:      { type: String, required: true },
+  password:   { type: String, required: true },
+  role:       { type: String, default: "teacher" }
 });
 
 module.exports = mongoose.model("Teacher", teacherSchema);
