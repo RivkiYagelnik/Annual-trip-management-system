@@ -6,13 +6,20 @@ const role = require("../middleware/role.middleware");
 
 router.post("/", teacherController.createTeacher);
 
-router.get("/", auth, role(["teacher"]), teacherController.getAllTeachers);
-
 router.get(
   "/students",
   auth,
   role(["teacher"]),
   teacherController.getStudentsByTeacherClass
 );
+
+router.get(
+  "/:idNumber", 
+  auth, 
+  role(["teacher"]), 
+  teacherController.getTeacherById
+);
+
+router.get("/", auth, role(["teacher"]), teacherController.getAllTeachers);
 
 module.exports = router;

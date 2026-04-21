@@ -1,6 +1,7 @@
 const bcrypt  = require("bcryptjs");
 const Teacher = require("../models/Teacher.model");
 const Student = require("../models/Student.model");
+const teacherService = require("../services/teacher.service");
 
 exports.createTeacher = async (req, res) => {
   const { firstName, lastName, idNumber, class: className, password } = req.body;
@@ -26,6 +27,22 @@ exports.createTeacher = async (req, res) => {
 
     const { password: _, ...safeTeacher } = teacher.toObject();
     res.status(201).json(safeTeacher);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.getTeacherById = async (req, res) => {
+  const { idNumber } = req.params;
+
+  try {
+    const teacher = await teacherService.findByIdNumber(idNumber);
+
+    if (!teacher) {
+      return res.status(404).json({ message: "Teacher not found" });
+    }
+
+    res.json(teacher);
   } catch (err) {
     res.status(500).json({ message: "Server error" });
   }
