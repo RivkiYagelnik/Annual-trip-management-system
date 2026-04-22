@@ -1,0 +1,15 @@
+.page {
+    padding: 48px 32px;
+    direction: rtl;
+  }
+  
+  .heading {
+    font-size: 22px;
+    color: #1e3a5f;
+    margin: 0 0 8px;
+  }
+  
+  .sub {
+    color: #666;
+    font-size: 14px;
+  }
