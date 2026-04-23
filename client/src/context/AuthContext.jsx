@@ -1,18 +1,38 @@
 import { createContext, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";  // npm install jwt-decode
+import { jwtDecode } from "jwt-decode";
 import { login as loginApi } from "../api/auth.api";
 
 const AuthContext = createContext(null);
 
+function getStoredAuth() {
+  const stored = localStorage.getItem("token");
+  if (!stored) return { token: null, user: null };
+
+  try {
+    const decoded = jwtDecode(stored);
+
+    const isExpired = decoded.exp * 1000 < Date.now();
+
+    if (isExpired) {
+      localStorage.removeItem("token");
+      return { token: null, user: null };
+    }
+
+    return { token: stored, user: decoded };
+  } catch {
+    localStorage.removeItem("token");
+    return { token: null, user: null };
+  }
+}
+
 export function AuthProvider({ children }) {
   const navigate = useNavigate();
 
-  const [token, setToken] = useState(() => localStorage.getItem("token"));
-  const [user,  setUser]  = useState(() => {
-    const stored = localStorage.getItem("token");
-    return stored ? jwtDecode(stored) : null;
-  });
+  const initialAuth = getStoredAuth();
+
+  const [token, setToken] = useState(initialAuth.token);
+  const [user,  setUser]  = useState(initialAuth.user);
 
   const login = async (idNumber, password) => {
     const res = await loginApi(idNumber, password);

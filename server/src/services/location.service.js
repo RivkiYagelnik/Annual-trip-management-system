@@ -74,13 +74,13 @@ const getLatestLocations = async () => {
   const enriched = await Promise.all(
     latest.map(async (loc) => {
       const student = await Student.findOne({ idNumber: loc._id }).select(
-        "firstName lastName className"
+        "firstName lastName class"
       );
       return {
         studentId: loc._id,
         firstName: student?.firstName || "Unknown",
         lastName: student?.lastName || "Unknown",
-        className: student?.className || "",
+        className: student?.class || "",
         latitude: loc.latitude,
         longitude: loc.longitude,
         timestamp: loc.timestamp,

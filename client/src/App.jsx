@@ -8,6 +8,7 @@ import TeachersPage     from "./pages/TeachersPage";
 import StudentsPage     from "./pages/StudentsPage";
 import MyStudentsPage   from "./pages/MyStudentsPage";
 import { useAuth }      from "./context/AuthContext";
+import Trackingmap      from './pages/Trackingmap';
 
 function Layout({ children }) {
   return (
@@ -38,6 +39,9 @@ function AppRoutes() {
       } />
       <Route path="/my-students" element={
         <PrivateRoute><Layout><MyStudentsPage /></Layout></PrivateRoute>
+      } />
+      <Route path="/map" element={
+        <PrivateRoute><Layout><Trackingmap /></Layout></PrivateRoute>
       } />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

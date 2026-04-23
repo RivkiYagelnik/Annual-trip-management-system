@@ -13,6 +13,7 @@ export default function Navbar() {
         <NavLink to="/teachers"    className={({ isActive }) => isActive ? styles.active : ""}>מורות</NavLink>
         <NavLink to="/students"    className={({ isActive }) => isActive ? styles.active : ""}>תלמידות</NavLink>
         <NavLink to="/my-students" className={({ isActive }) => isActive ? styles.active : ""}>הכיתה שלי</NavLink>
+        <NavLink to="/map"         className={({ isActive }) => isActive ? styles.active : ""}>מפה</NavLink>
       </div>
       <button className={styles.logout} onClick={logout}>
         התנתקות ({user?.class})
