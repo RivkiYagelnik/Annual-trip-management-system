@@ -1,5 +1,6 @@
 const Location = require("../models/Location.model");
 const Student = require("../models/Student.model");
+const { getIO } = require("../socket");
 
 /**
  * Convert DMS (Degrees, Minutes, Seconds) to decimal degrees
@@ -49,7 +50,25 @@ const saveLocation = async ({ ID, Coordinates, Time }) => {
     timestamp: new Date(Time),
   });
 
-  await location.save();
+  // Saving to DB and transmitting to UI at the same time — asynchronous
+  await Promise.all([
+    location.save(),
+    Promise.resolve().then(() => {
+      const io = getIO();
+      if (io) {
+        io.emit("location:update", {
+          studentId,
+          firstName: student.firstName,
+          lastName: student.lastName,
+          className: student.className,
+          latitude: dmsToDecimal(Latitude),
+          longitude: dmsToDecimal(Longitude),
+          timestamp: new Date(Time),
+        });
+      }
+    }),
+  ]);
+
   return location;
 };
 

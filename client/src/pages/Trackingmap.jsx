@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import api from "../api/axiosInstance";
+import { io } from "socket.io-client";
+const SOCKET_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:3000";
 
 const POLL_INTERVAL_MS = 60_000;
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -26,14 +28,11 @@ export default function TrackingMap() {
   const updateMarkers = (locations) => {
     const map = mapInstanceRef.current;
     if (!map) return;
-
-    const seen = new Set();
-
+  
     locations.forEach(({ studentId, firstName, lastName, className, latitude, longitude, timestamp }) => {
-      seen.add(studentId);
       const label = `${firstName} ${lastName}`;
       const title = `${label} | כיתה ${className}\n${new Date(timestamp).toLocaleTimeString("he-IL")}`;
-
+  
       if (markersRef.current[studentId]) {
         markersRef.current[studentId].setPosition({ lat: latitude, lng: longitude });
         markersRef.current[studentId].setTitle(title);
@@ -56,7 +55,7 @@ export default function TrackingMap() {
             scale: 12,
           },
         });
-
+  
         const infoWindow = new window.google.maps.InfoWindow({
           content: `<div style="font-family:sans-serif;direction:rtl"><strong>${label}</strong><br/>כיתה ${className}<br/><small>${new Date(timestamp).toLocaleTimeString("he-IL")}</small></div>`,
         });
@@ -65,35 +64,33 @@ export default function TrackingMap() {
         });
       }
     });
-
-    // Remove markers for students no longer in list
+  
+    setStudentCount(Object.keys(markersRef.current).length);
+    setLastUpdated(new Date());
+  };
+  
+  const replaceAllMarkers = (locations) => {
+    // Delete all existing markers
     Object.keys(markersRef.current).forEach((id) => {
-      if (!seen.has(id)) {
-        markersRef.current[id].setMap(null);
-        delete markersRef.current[id];
-      }
+      markersRef.current[id].setMap(null);
+      delete markersRef.current[id];
     });
-
-    // Auto fit map to all visible students
+  
+    updateMarkers(locations);
+  
+    // fit bounds only on first load
     if (locations.length > 0) {
       const bounds = new window.google.maps.LatLngBounds();
-
-      locations.forEach(({ latitude, longitude }) => {
-        bounds.extend({ lat: latitude, lng: longitude });
-      });
-
-      map.fitBounds(bounds);
+      locations.forEach(({ latitude, longitude }) => bounds.extend({ lat: latitude, lng: longitude }));
+      mapInstanceRef.current.fitBounds(bounds);
     }
-
-    setStudentCount(locations.length);
-    setLastUpdated(new Date());
   };
 
   const fetchLocations = async () => {
     try {
       const { data } = await api.get("/location/latest");
       if (data.success) {
-        updateMarkers(data.data);
+        replaceAllMarkers(data.data);
         setError(null);
       }
     } catch (err) {
@@ -102,8 +99,8 @@ export default function TrackingMap() {
   };
 
   useEffect(() => {
-    let interval;
-
+    let socket;
+  
     loadGoogleMapsScript()
       .then(() => {
         mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
@@ -113,11 +110,20 @@ export default function TrackingMap() {
           disableDefaultUI: false,
         });
         fetchLocations();
-        interval = setInterval(fetchLocations, POLL_INTERVAL_MS);
+  
+        socket = io(SOCKET_URL);
+        socket.on("connect", () => {
+          fetchLocations();
+        });
+        socket.on("location:update", (locationData) => {
+          updateMarkers([locationData]);
+        });
       })
       .catch(() => setError("שגיאה בטעינת Google Maps"));
-
-    return () => clearInterval(interval);
+  
+    return () => {
+      socket?.disconnect();
+    };
   }, []);
 
   return (
