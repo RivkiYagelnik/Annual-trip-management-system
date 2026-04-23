@@ -8,6 +8,10 @@ exports.createStudent = async (req, res) => {
     return res.status(400).json({ message: "All fields are required" });
   }
 
+  if (!/^\d{9}$/.test(idNumber)) {
+    return res.status(400).json({ message: "ID number must be exactly 9 digits" });
+  }
+
   try {
     const student = await Student.create({ firstName, lastName, idNumber, class: className });
     res.status(201).json(student);

@@ -26,7 +26,7 @@ export default function TeachersPage() {
     const errs = {};
     if (!form.firstName.trim()) errs.firstName = "שדה חובה";
     if (!form.lastName.trim())  errs.lastName  = "שדה חובה";
-    if (!form.idNumber.trim())  errs.idNumber  = "שדה חובה";
+    if (!/^\d{9}$/.test(form.idNumber)) errs.idNumber = "תעודת זהות חייבת להכיל 9 ספרות";
     if (!form.class)            errs.class     = "שדה חובה";
     if (!form.password.trim())  errs.password  = "שדה חובה";
     return errs;
