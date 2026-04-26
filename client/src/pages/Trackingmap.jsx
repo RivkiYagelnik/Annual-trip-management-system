@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import api from "../api/axiosInstance";
 import { io } from "socket.io-client";
+import { useAuth } from "../context/AuthContext";
 const SOCKET_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:3000";
 
 const POLL_INTERVAL_MS = 60_000;
@@ -24,6 +25,9 @@ export default function TrackingMap() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [error, setError] = useState(null);
   const [studentCount, setStudentCount] = useState(0);
+  const { user } = useAuth();
+  const teacherMarkerRef = useRef(null);
+  const [alerts, setAlerts] = useState({});
 
   const updateMarkers = (locations) => {
     const map = mapInstanceRef.current;
@@ -86,12 +90,49 @@ export default function TrackingMap() {
     }
   };
 
+  const fetchAlerts = async () => {
+    try {
+      const { data } = await api.get("/location/alerts");
+      if (data.success) {
+        Object.keys(markersRef.current).forEach((id) => {
+          markersRef.current[id].setIcon({
+            path: window.google.maps.SymbolPath.CIRCLE,
+            fillColor: "#1a73e8",
+            fillOpacity: 1,
+            strokeColor: "#fff",
+            strokeWeight: 2,
+            scale: 12,
+          });
+        });
+  
+        const alertsMap = {};
+        data.data.forEach(({ studentId, firstName, lastName, distance }) => {
+          alertsMap[studentId] = { firstName, lastName, distance, time: new Date() };
+          if (markersRef.current[studentId]) {
+            markersRef.current[studentId].setIcon({
+              path: window.google.maps.SymbolPath.CIRCLE,
+              fillColor: "#d32f2f",
+              fillOpacity: 1,
+              strokeColor: "#fff",
+              strokeWeight: 2,
+              scale: 14,
+            });
+          }
+        });
+        setAlerts(alertsMap);
+      }
+    } catch (err) {
+      console.error("שגיאה בטעינת התראות", err);
+    }
+  };
+
   const fetchLocations = async () => {
     try {
       const { data } = await api.get("/location/latest");
       if (data.success) {
         replaceAllMarkers(data.data);
         setError(null);
+        await fetchAlerts();
       }
     } catch (err) {
       setError("שגיאה בטעינת מיקומים");
@@ -117,6 +158,66 @@ export default function TrackingMap() {
         });
         socket.on("location:update", (locationData) => {
           updateMarkers([locationData]);
+        });
+
+        socket.emit("teacher:join", user.idNumber);
+    
+        socket.on("alert:distance", ({ studentId, firstName, lastName, distance }) => {
+          setAlerts((prev) => ({
+            ...prev,
+            [studentId]: { firstName, lastName, distance, time: new Date() },
+          }));
+          if (markersRef.current[studentId]) {
+            markersRef.current[studentId].setIcon({
+              path: window.google.maps.SymbolPath.CIRCLE,
+              fillColor: "#d32f2f",
+              fillOpacity: 1,
+              strokeColor: "#fff",
+              strokeWeight: 2,
+              scale: 14,
+            });
+          }
+        });
+
+        socket.on("alert:clear", ({ studentId }) => {
+          setAlerts((prev) => {
+            const updated = { ...prev };
+            delete updated[studentId];
+            return updated;
+          });
+          if (markersRef.current[studentId]) {
+            markersRef.current[studentId].setIcon({
+              path: window.google.maps.SymbolPath.CIRCLE,
+              fillColor: "#1a73e8",
+              fillOpacity: 1,
+              strokeColor: "#fff",
+              strokeWeight: 2,
+              scale: 12,
+            });
+          }
+        });
+
+        socket.on("teacher:location", ({ latitude, longitude }) => {
+          const map = mapInstanceRef.current;
+          if (!map) return;
+          if (teacherMarkerRef.current) {
+            teacherMarkerRef.current.setPosition({ lat: latitude, lng: longitude });
+          } else {
+            teacherMarkerRef.current = new window.google.maps.Marker({
+              position: { lat: latitude, lng: longitude },
+              map,
+              title: "המורה שלי",
+              icon: {
+                path: window.google.maps.SymbolPath.CIRCLE,
+                fillColor: "#34a853",
+                fillOpacity: 1,
+                strokeColor: "#fff",
+                strokeWeight: 2,
+                scale: 14,
+              },
+              label: { text: "מ", color: "#fff", fontWeight: "bold" },
+            });
+          }
         });
       })
       .catch(() => setError("שגיאה בטעינת Google Maps"));
@@ -160,6 +261,17 @@ export default function TrackingMap() {
           }}
         >
           {error}
+        </div>
+      )}
+
+      {Object.keys(alerts).length > 0 && (
+        <div style={{ background: "#fce8e6", padding: "8px 20px", direction: "rtl" }}>
+          {Object.entries(alerts).map(([id, { firstName, lastName, distance, time }]) => (
+            <div key={id}>
+              ⚠️ {firstName} {lastName} — {distance} ק"מ מהמורה
+              <small style={{ marginRight: 8 }}>{time.toLocaleTimeString("he-IL")}</small>
+            </div>
+          ))}
         </div>
       )}
 
