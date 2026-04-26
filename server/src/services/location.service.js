@@ -1,6 +1,9 @@
 const Location = require("../models/Location.model");
 const Student = require("../models/Student.model");
 const { getIO } = require("../socket");
+const { getAllTeachers } = require("../classroomCache");
+const { checkAndEmitAlerts } = require("./distanceService");
+const TeacherLocation = require("../models/TeacherLocation.model");
 
 /**
  * Convert DMS (Degrees, Minutes, Seconds) to decimal degrees
@@ -68,6 +71,18 @@ const saveLocation = async ({ ID, Coordinates, Time }) => {
       }
     }),
   ]);
+  console.log("saved location:", location.studentId, location.latitude, location.longitude);
+
+  const teacherLocations = await TeacherLocation.find({});
+  await Promise.all(
+    teacherLocations.map((t) =>
+      checkAndEmitAlerts(t.teacherId, [{
+        studentId,
+        latitude: dmsToDecimal(Latitude),
+        longitude: dmsToDecimal(Longitude),
+      }])
+    )
+  );
 
   return location;
 };
@@ -110,4 +125,18 @@ const getLatestLocations = async () => {
   return enriched;
 };
 
-module.exports = { saveLocation, getLatestLocations };
+const getDistanceAlerts = async (teacherId) => {
+  const { checkAndEmitAlerts } = require("./distanceService");
+  
+  const latest = await Location.aggregate([
+    { $sort: { studentId: 1, timestamp: -1 } },
+    { $group: { _id: "$studentId", latitude: { $first: "$latitude" }, longitude: { $first: "$longitude" } } },
+  ]);
+
+  return checkAndEmitAlerts(
+    teacherId,
+    latest.map((s) => ({ studentId: s._id, latitude: s.latitude, longitude: s.longitude }))
+  );
+};
+
+module.exports = { saveLocation, getLatestLocations, dmsToDecimal, validateDms, getDistanceAlerts };
