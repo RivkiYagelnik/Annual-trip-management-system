@@ -4,7 +4,6 @@ import { io } from "socket.io-client";
 import { useAuth } from "../context/AuthContext";
 const SOCKET_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:3000";
 
-const POLL_INTERVAL_MS = 60_000;
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
 const loadGoogleMapsScript = () =>
