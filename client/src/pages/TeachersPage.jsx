@@ -1,63 +1,33 @@
-import { useEffect, useState } from "react";
 import { getAllTeachers, createTeacher } from "../api/teachers.api";
+import { useEntityForm } from "../hooks/useEntityForm";
 import FormInput from "../components/FormInput";
+import DataTable from "../components/DataTable";
 import styles from "./DataPage.module.css";
 
 const CLASSES = ["א", "ב", "ג", "ד", "ה", "ו"];
 
 const emptyForm = { firstName: "", lastName: "", idNumber: "", class: "", password: "" };
 
+const validate = (form) => {
+  const errs = {};
+  if (!form.firstName.trim()) errs.firstName = "שדה חובה";
+  if (!form.lastName.trim())  errs.lastName  = "שדה חובה";
+  if (!/^\d{9}$/.test(form.idNumber)) errs.idNumber = "תעודת זהות חייבת להכיל 9 ספרות";
+  if (!form.class)            errs.class    = "שדה חובה";
+  if (!form.password.trim())  errs.password = "שדה חובה";
+  return errs;
+};
+
+const COLUMNS = [
+  { key: "firstName", label: "שם פרטי" },
+  { key: "lastName",  label: "שם משפחה" },
+  { key: "idNumber",  label: 'ת"ז' },
+  { key: "class",     label: "כיתה" },
+];
+
 export default function TeachersPage() {
-  const [teachers, setTeachers] = useState([]);
-  const [form,     setForm]     = useState(emptyForm);
-  const [errors,   setErrors]   = useState({});
-  const [apiError, setApiError] = useState("");
-  const [loading,  setLoading]  = useState(false);
-  const [fetching, setFetching] = useState(true);
-
-  useEffect(() => {
-    getAllTeachers()
-      .then((res) => setTeachers(res.data))
-      .catch(() => setApiError("לא ניתן לטעון את רשימת המורות"))
-      .finally(() => setFetching(false));
-  }, []);
-
-  const validate = () => {
-    const errs = {};
-    if (!form.firstName.trim()) errs.firstName = "שדה חובה";
-    if (!form.lastName.trim())  errs.lastName  = "שדה חובה";
-    if (!/^\d{9}$/.test(form.idNumber)) errs.idNumber = "תעודת זהות חייבת להכיל 9 ספרות";
-    if (!form.class)            errs.class     = "שדה חובה";
-    if (!form.password.trim())  errs.password  = "שדה חובה";
-    return errs;
-  };
-
-  const handleChange = (e) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    setErrors((prev) => ({ ...prev, [e.target.name]: "" }));
-    setApiError("");
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const errs = validate();
-    if (Object.keys(errs).length) { setErrors(errs); return; }
-
-    setLoading(true);
-    try {
-      const res = await createTeacher(form);
-      setTeachers((prev) => [...prev, res.data]);
-      setForm(emptyForm);
-    } catch (err) {
-      setApiError(
-        err.response?.status === 409
-          ? "מורה עם תעודת זהות זו כבר קיימת"
-          : "אירעה שגיאה, נסי שוב"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { items: teachers, form, errors, apiError, loading, fetching, handleChange, handleSubmit } =
+    useEntityForm({ fetchFn: getAllTeachers, createFn: createTeacher, emptyForm, validate });
 
   return (
     <div className={styles.page}>
@@ -87,32 +57,7 @@ export default function TeachersPage() {
 
       <div className={styles.listSection}>
         <h2 className={styles.sectionTitle}>רשימת מורות</h2>
-        {fetching ? (
-          <p className={styles.info}>טוענת...</p>
-        ) : teachers.length === 0 ? (
-          <p className={styles.info}>אין מורות במערכת</p>
-        ) : (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>שם פרטי</th>
-                <th>שם משפחה</th>
-                <th>ת"ז</th>
-                <th>כיתה</th>
-              </tr>
-            </thead>
-            <tbody>
-              {teachers.map((t) => (
-                <tr key={t._id}>
-                  <td>{t.firstName}</td>
-                  <td>{t.lastName}</td>
-                  <td>{t.idNumber}</td>
-                  <td>{t.class}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+        <DataTable fetching={fetching} emptyMessage="אין מורות במערכת" columns={COLUMNS} rows={teachers} />
       </div>
     </div>
   );
