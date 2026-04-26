@@ -25,7 +25,8 @@ exports.login = async (req, res) => {
       {
         id: teacher._id,
         role: teacher.role,
-        class: teacher.class
+        class: teacher.class,
+        idNumber: teacher.idNumber,
       },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
