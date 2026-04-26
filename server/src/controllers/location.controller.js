@@ -30,4 +30,16 @@ const getLatestLocations = async (req, res) => {
   }
 };
 
-module.exports = { receiveLocation, getLatestLocations };
+const getAlerts = async (req, res) => {
+  try {
+    const teacherId = req.user.idNumber;
+    const alerts = await locationService.getDistanceAlerts(teacherId);
+    return res.status(200).json({ success: true, data: alerts });
+  } catch (err) {
+    return res
+      .status(err.status || 500)
+      .json({ success: false, message: err.message || "Server error" });
+  }
+};
+
+module.exports = { receiveLocation, getLatestLocations, getAlerts };
