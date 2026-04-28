@@ -3,8 +3,7 @@ import { useEntityForm } from "../hooks/useEntityForm";
 import FormInput from "../components/FormInput";
 import DataTable from "../components/DataTable";
 import styles from "./DataPage.module.css";
-
-const CLASSES = ["א", "ב", "ג", "ד", "ה", "ו"];
+import ClassSelect from "../components/ClassSelect";
 
 const emptyForm = { firstName: "", lastName: "", idNumber: "", class: "", password: "" };
 
@@ -39,14 +38,7 @@ export default function TeachersPage() {
           <FormInput label="מספר ת\ז'" name="idNumber"  value={form.idNumber}  onChange={handleChange} error={errors.idNumber} />
           <FormInput label="סיסמה"     name="password"  value={form.password}  onChange={handleChange} error={errors.password} type="password" />
 
-          <div className={styles.field}>
-            <label className={styles.label}>כיתה</label>
-            <select name="class" value={form.class} onChange={handleChange} className={`${styles.select} ${errors.class ? styles.selectError : ""}`}>
-              <option value="">בחרי כיתה</option>
-              {CLASSES.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-            {errors.class && <span className={styles.error}>{errors.class}</span>}
-          </div>
+          <ClassSelect value={form.class} onChange={handleChange} error={errors.class} />
 
           {apiError && <p className={styles.apiError}>{apiError}</p>}
           <button type="submit" className={styles.btn} disabled={loading}>
