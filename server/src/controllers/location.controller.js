@@ -39,4 +39,4 @@ const getLatestLocations = async (req, res) => {
   }
 };
 
-module.exports = { receiveLocation, getLatestLocations, getAlerts };
+module.exports = { receiveLocation, getLatestLocations };

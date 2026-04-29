@@ -10,6 +10,17 @@ The system allows for management of teachers and students, real-time location tr
 - Locations appear on a live map (no refresh needed)
 - The system alerts the teacher if a student is more than 3km away
 
+## Screenshots
+
+### Login Page
+![Login Page](./screenshots/login.png)
+
+### Dashboard
+![Dashboard](./screenshots/dashboard.png)
+
+### Live Map
+![Live Map](./screenshots/map.png)
+
 ## Tech stack
 
 **Client:** React, Vite, Google Maps API, Socket.io-client  
