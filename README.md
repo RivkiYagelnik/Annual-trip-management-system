@@ -18,6 +18,15 @@ The system allows for management of teachers and students, real-time location tr
 ### Dashboard
 ![Dashboard](./screenshots/dashboard.png)
 
+### Teachers
+![Teachers](./screenshots/teachers.png)
+
+### Students
+![Students](./screenshots/students.png)
+
+### My Class
+![My Class](./screenshots/myClass.png)
+
 ### Live Map
 ![Live Map](./screenshots/map.png)
 
