@@ -18,11 +18,3 @@
 .idea/
 .DS_Store
 Thumbs.db
-
-# Vite specific (Client)
-client/dist/
-client/node_modules/
-
-# Node specific (Server)
-server/node_modules/
-server/dist/

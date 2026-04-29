@@ -22,19 +22,16 @@ const receiveLocation = async (req, res) => {
 const getLatestLocations = async (req, res) => {
   try {
     const locations = await locationService.getLatestLocations();
-    return res.status(200).json({ success: true, data: locations });
-  } catch (err) {
-    return res
-      .status(err.status || 500)
-      .json({ success: false, message: err.message || "Server error" });
-  }
-};
 
-const getAlerts = async (req, res) => {
-  try {
     const teacherId = req.user.idNumber;
-    const alerts = await locationService.getDistanceAlerts(teacherId);
-    return res.status(200).json({ success: true, data: alerts });
+    const { checkAndEmitAlerts } = require("../services/distanceService");
+    
+    const alerts = await checkAndEmitAlerts(teacherId, locations.map((l) => ({
+      studentId: l.studentId,
+      latitude: l.latitude,
+      longitude: l.longitude,
+    })));
+    return res.status(200).json({ success: true, data: locations, alerts });
   } catch (err) {
     return res
       .status(err.status || 500)
